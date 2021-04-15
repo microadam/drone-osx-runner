@@ -4,13 +4,15 @@ const { spawn } = require('child_process')
 const workingDir = '/drone/src'
 
 const osxHost = process.env.PLUGIN_HOST || 'http://localhost:3000'
-const authKey = process.env.PLUGIN_KEY || 'abc123'
+const authKey = process.env.PLUGIN_KEY
 const commands = process.env.PLUGIN_COMMANDS ? process.env.PLUGIN_COMMANDS.replace(/,/g, '\n') : 'echo NO COMMANDS PROVIDED'
 const inputContext = process.env.PLUGIN_INPUTCONTEXT ? process.env.PLUGIN_INPUTCONTEXT.replace(/,/g, '\n') : '.'
 const outputContext = process.env.PLUGIN_OUTPUTCONTEXT ? process.env.PLUGIN_OUTPUTCONTEXT.replace(/,/g, '\n') : null
 
-const Socket = Primus.createSocket({ transformer: 'websockets', parser: 'ejson', plugin: { emitter: Emitter } })
-const client = new Socket(osxHost)
+const socketOptions = { transformer: 'websockets', parser: 'ejson', plugin: { emitter: Emitter } }
+
+const Socket = Primus.createSocket(socketOptions)
+const client = new Socket(osxHost, { transport: { maxPayload: 209715200 } })
 
 client.on('error', error => {
   console.log('ERROR:', error)
@@ -85,7 +87,7 @@ client.on('open', () => {
     console.log('Auth successful!')
     console.log('Sending input context...')
     const tar = spawn('tar', [ '-c', '--files-from', '-' ], { cwd: workingDir })
-    const zstd = spawn('zstd', [ '--adapt', '-T0' ], { cwd: workingDir })
+    const zstd = spawn('zstd', [ '--adapt', '-T0', '--long=31' ], { cwd: workingDir })
 
     zstd.stdout.on('data', data => {
       client.write(data)

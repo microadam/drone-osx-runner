@@ -39,7 +39,7 @@ primus.on('connection', spark => {
   const workingDir = '/tmp/drone-osx-runner-' + hat()
   console.log('workingDir: ', workingDir)
   fs.mkdirSync(workingDir)
-  const cat = spawn('zstdcat', [ '-' ])
+  const cat = spawn('zstdcat', [ '--long=31', '-' ])
   const tar = spawn('tar', [ 'xC', workingDir ])
   cat.stdout.pipe(tar.stdin).pipe(tar.stdout)
 
